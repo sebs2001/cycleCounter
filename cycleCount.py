@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-from roboflow import Roboflow
+import Roboflow
 
 
 # Make sure save folder exists
