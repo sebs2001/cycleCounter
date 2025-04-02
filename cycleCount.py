@@ -20,37 +20,41 @@ if uploaded_file is not None:
     api_url = "https://detect.roboflow.com/my-first-project-eintr/8"
     params = {
         "api_key": "o9tbMpy3YklEF3MoRmdR",
-        "format": "image",
+        "format": "json",
         "annotated": "true"
     }
 
     # Send image to Roboflow
     response = requests.post(api_url, files={"file": img_bytes}, params=params)
 
-    if response.status_code != 200:
-        st.error(f"API Error: {response.status_code}")
-        st.stop()
+    if response.status_code == 200:
+        try:
+            result = response.json()
 
-    result = response.json()
+            # Show original image
+            st.image(uploaded_file, caption="Original Image")
 
-    # Show original image
-    st.image(uploaded_file, caption="Original Image")
+            # Show annotated image (with bounding boxes)
+            image_url = result.get("image", {}).get("url")
+            if image_url:
+                st.image(image_url, caption="Roboflow Detection (Annotated)")
+            else:
+                st.warning("⚠️ Annotated image not returned.")
 
-    # Show annotated result (bounding boxes)
-    image_url = result.get("image", {}).get("url")
-    if image_url:
-        st.image(image_url, caption="Roboflow Detection (Annotated)")
+            # Count detected resistors
+            predictions = result.get("predictions", [])
+            if predictions:
+                st.success(f"✅ Detected {len(predictions)} resistors.")
+            else:
+                st.warning("No predictions found.")
+
+        except Exception as e:
+            st.error(f"❌ Failed to parse result: {str(e)}")
+
     else:
-        st.warning("⚠️ Annotated image not returned. Check your model output settings.")
+        st.error(f"❌ Roboflow API error: {response.status_code}")
 
-    # Show count of detections
-    predictions = result.get("predictions", [])
-    if predictions:
-        st.success(f"✅ Detected {len(predictions)} resistors.")
-    else:
-        st.warning("No predictions returned.")
-
-# Upload to Roboflow to annotate later
+# Upload to Roboflow for manual annotation
 if st.button("💾 Upload to Roboflow"):
     if uploaded_file:
         temp_path = "temp_upload.jpg"
@@ -74,10 +78,3 @@ if st.button("💾 Upload to Roboflow"):
             st.error(f"❌ Upload failed: {str(e)}")
     else:
         st.warning("⚠️ No image to upload.")
-
-
-
-
-
-
-
