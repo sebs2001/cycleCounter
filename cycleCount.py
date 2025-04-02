@@ -11,7 +11,8 @@ st.title("Cycle Counter v1.0")
 st.write("Take a photo.")
 
 # Camera input (mobile and desktop compatible)
-uploaded_file = st.camera_input("Take a photo")
+uploaded_file = st.camera_input("Take a photo", key="camera1")
+
 
 if uploaded_file:
     # Convert to base64
