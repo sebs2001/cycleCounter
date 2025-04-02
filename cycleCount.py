@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-
+from roboflow import Roboflow
 
 # Make sure save folder exists
 if not os.path.exists("saved"):
@@ -48,7 +48,7 @@ if uploaded_file is not None:
 
 # Optionally save the annotated image
 
-from roboflow import Roboflow
+
 
 if st.button("💾 Upload to Roboflow"):
     rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
