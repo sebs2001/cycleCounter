@@ -21,23 +21,28 @@ if uploaded_file:
     # ✅ Correct Roboflow API URL format
     api_url = "https://detect.roboflow.com/my-first-project-8/1?api_key=o9tbMpy3YklEF3MoRmdR"
 
-    # Send image to Roboflow model
+uploaded_file = st.camera_input("Take a photo")
+
+if uploaded_file is not None:
+    img_bytes = uploaded_file.getvalue()
+    img_str = base64.b64encode(img_bytes).decode("utf-8")
+
+    api_url = "https://detect.roboflow.com/my-first-project-8/1?api_key=o9tbMpy3YklEF3MoRmdR"
     response = requests.post(api_url, json={"image": img_str})
     result = response.json()
 
-    # Show the image
+    # ✅ This line is safe now — inside the block
     st.image(uploaded_file, caption="Original Image")
 
-    # Show annotated image from Roboflow (if available)
     if "image" in result and "url" in result["image"]:
         st.image(result["image"]["url"], caption="Roboflow Detection")
 
-    # Show count of detected objects
     if "predictions" in result:
         count = len(result["predictions"])
         st.success(f"Detected {count} resistors.")
     else:
         st.warning("No predictions returned.")
+
 
     # Optional: save annotated image
     if st.button("💾 Save annotated image"):
