@@ -32,6 +32,18 @@ if uploaded_file is not None:
     response = requests.post(api_url, json={"image": img_str})
     result = response.json()
 
+    if response.status_code != 200:
+    st.error(f"API Error: {response.status_code}")
+    st.stop()
+
+    result = response.json()
+    st.json(result)
+
+
+
+    st.json(result)  # ✅ Show the full response from Roboflow
+
+
     # ✅ This line is safe now — inside the block
     st.image(uploaded_file, caption="Original Image")
 
