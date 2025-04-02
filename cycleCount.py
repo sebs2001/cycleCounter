@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-from roboflow import Roboflow
+
 
 # Make sure save folder exists
 if not os.path.exists("saved"):
@@ -51,30 +51,34 @@ if uploaded_file is not None:
 
 
 if st.button("💾 Upload to Roboflow"):
+    from roboflow import Roboflow
     rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
     project = rf.workspace("quanticwork").project("my-first-project-eintr")
 
-    if "image" in result and "url" in result["image"]:
-        # Download the image from Roboflow inference result
-        image_data = requests.get(result["image"]["url"]).content
-
-        # Save it temporarily
+    if uploaded_file:
+        # Save uploaded image locally
         temp_path = "temp_upload.jpg"
         with open(temp_path, "wb") as f:
-            f.write(image_data)
+            f.write(uploaded_file.getvalue())
 
-        # ✅ Upload using Roboflow SDK — official method
-        upload_response = project.upload("temp_upload.jpg")
+        try:
+            # Upload using Roboflow SDK with optional params
+            upload_response = project.upload(
+                image_path=temp_path,
+                batch_name="streamlit-submits",
+                split="train",
+                tag_names=["from-streamlit"],
+                num_retry_uploads=3
+            )
 
-        # ✅ Show exact response so you know it worked
-        st.write(upload_response.json())
+            st.success("✅ Uploaded to Roboflow. Check Annotate > Unannotated.")
+            st.write(upload_response.json())  # Show details
 
-        if upload_response.status_code == 200 or "id" in upload_response.json():
-            st.success("✅ Uploaded. Go to Annotate → Unannotated in Roboflow.")
-        else:
-            st.error("❌ Upload failed.")
+        except Exception as e:
+            st.error(f"❌ Upload failed: {str(e)}")
     else:
-        st.warning("⚠️ No image found to upload.")
+        st.warning("⚠️ No image available to upload.")
+
 
 
 
