@@ -11,15 +11,17 @@ if img is not None:
     # Display the original image
     st.image(img, caption="Original Image", use_column_width=True)
 
-    # Send the image to Roboflow's object detection model
-    # Roboflow inference API endpoint format:
-    # https://detect.roboflow.com/<MODEL_NAME>/<VERSION>?api_key=<API_KEY>
-    url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
+    # Explicitly request JSON from Roboflow's object detection model
+    # (adding &format=json to avoid image or HTML response)
+    url = (
+        "https://detect.roboflow.com/my-first-project-eintr/"
+        "8?api_key=o9tbMpy3YklEF3MoRmdR&format=json"
+    )
     files = {"file": ("image.jpg", img.getvalue(), "image/jpeg")}
     response = requests.post(url, files=files)
-    result = response.json()
+    result = response.json()  # parse the JSON response
 
-    # Display the annotated image with bounding boxes
+    # Display the annotated image (URL returned in JSON response)
     annotated_url = result["image"]["url"]
     st.image(annotated_url, caption="Annotated Image", use_column_width=True)
 
@@ -46,6 +48,7 @@ if img is not None:
             sequence_size=100
         )
         st.write("Image uploaded for future annotation!")
+
 
 
 
