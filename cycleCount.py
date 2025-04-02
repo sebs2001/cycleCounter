@@ -48,32 +48,32 @@ if uploaded_file is not None:
         st.warning("No predictions returned.")
 
 # Optionally save the annotated image
-
-from roboflow import Roboflow
-
 if st.button("💾 Upload to Roboflow"):
     rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
     project = rf.workspace("quanticwork").project("my-first-project-eintr")
 
-    # Download annotated image (or original if you prefer)
     if "image" in result and "url" in result["image"]:
+        # Download the image from Roboflow inference result
         image_data = requests.get(result["image"]["url"]).content
 
+        # Save it temporarily
         temp_path = "temp_upload.jpg"
         with open(temp_path, "wb") as f:
             f.write(image_data)
 
-        # Upload to Roboflow without extra params
-        upload_response = project.upload(temp_path)
+        # ✅ Upload using Roboflow SDK — official method
+        upload_response = project.upload("temp_upload.jpg")
 
-        st.write(upload_response.json())  # Debug the result
+        # ✅ Show exact response so you know it worked
+        st.write(upload_response.json())
 
         if upload_response.status_code == 200 or "id" in upload_response.json():
-            st.success("✅ Uploaded to Roboflow. Check your 'Unannotated' tab.")
+            st.success("✅ Uploaded. Go to Annotate → Unannotated in Roboflow.")
         else:
             st.error("❌ Upload failed.")
     else:
-        st.warning("⚠️ No image to upload.")
+        st.warning("⚠️ No image found to upload.")
+
 
 
 
