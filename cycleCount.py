@@ -1,9 +1,9 @@
 import streamlit as st
 import requests
 import os
+from roboflow import Roboflow
 
-
-# Make sure save folder exists
+# Ensure 'saved' directory exists
 if not os.path.exists("saved"):
     os.makedirs("saved")
 
@@ -14,19 +14,18 @@ st.write("Take a photo.")
 uploaded_file = st.camera_input("Take a photo", key="camera1")
 
 if uploaded_file is not None:
-    # Get image bytes
     img_bytes = uploaded_file.getvalue()
 
-    # ✅ Correct Roboflow API URL
-    api_url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
+    # Roboflow Inference API
+    api_url = "https://detect.roboflow.com/my-first-project-eintr/8"
+    params = {
+        "api_key": "o9tbMpy3YklEF3MoRmdR",
+        "format": "image",
+        "annotated": "true"
+    }
 
-    # Send the image using files=, not JSON
-    response = requests.post(
-    api_url,
-    files={"file": img_bytes},
-    params={"format": "image", "annotated": "true"}
-)
-
+    # Send image to Roboflow
+    response = requests.post(api_url, files={"file": img_bytes}, params=params)
 
     if response.status_code != 200:
         st.error(f"API Error: {response.status_code}")
@@ -34,40 +33,33 @@ if uploaded_file is not None:
 
     result = response.json()
 
-    # Debug: show the raw JSON response
-    st.json(result)
-
-    # Show the original photo
+    # Show original image
     st.image(uploaded_file, caption="Original Image")
 
-    # Show Roboflow annotated result
-    if "image" in result and "url" in result["image"]:
-        st.image(result["image"]["url"], caption="Roboflow Detection")
+    # Show annotated result (bounding boxes)
+    image_url = result.get("image", {}).get("url")
+    if image_url:
+        st.image(image_url, caption="Roboflow Detection (Annotated)")
+    else:
+        st.warning("⚠️ Annotated image not returned. Check your model output settings.")
 
-    # Show count
-    if "predictions" in result:
-        count = len(result["predictions"])
-        st.success(f"Detected {count} resistors.")
+    # Show count of detections
+    predictions = result.get("predictions", [])
+    if predictions:
+        st.success(f"✅ Detected {len(predictions)} resistors.")
     else:
         st.warning("No predictions returned.")
 
-# Optionally save the annotated image
-
-
-
+# Upload to Roboflow to annotate later
 if st.button("💾 Upload to Roboflow"):
-    from roboflow import Roboflow
-    rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
-    project = rf.workspace("quanticwork").project("my-first-project-eintr")
-
     if uploaded_file:
-        # Save uploaded image locally
         temp_path = "temp_upload.jpg"
         with open(temp_path, "wb") as f:
             f.write(uploaded_file.getvalue())
 
         try:
-            # Upload using Roboflow SDK with optional params
+            rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
+            project = rf.workspace("quanticwork").project("my-first-project-eintr")
             upload_response = project.upload(
                 image_path=temp_path,
                 batch_name="streamlit-submits",
@@ -76,13 +68,13 @@ if st.button("💾 Upload to Roboflow"):
                 num_retry_uploads=3
             )
 
-            st.success("✅ Uploaded to Roboflow. Check Annotate > Unannotated.")
-            
+            st.success("📤 Uploaded to Roboflow. Check Annotate > Unannotated.")
 
         except Exception as e:
             st.error(f"❌ Upload failed: {str(e)}")
     else:
-        st.warning("⚠️ No image available to upload.")
+        st.warning("⚠️ No image to upload.")
+
 
 
 
