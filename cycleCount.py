@@ -49,27 +49,43 @@ if uploaded_file is not None:
 
 # Optionally save the annotated image
 
-
 if st.button("💾 Save annotated image"):
-    rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
-    project = rf.workspace("quanticwork").project("my-first-project-eintr")
+    rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")  # Your private API key
 
+    # Your workspace and project slug from URL
+    workspace_id = "quanticwork"
+    project_id = "my-first-project-eintr"
+
+    project = rf.workspace(workspace_id).project(project_id)
+
+    # Download the annotated image from Roboflow result
     if "image" in result and "url" in result["image"]:
         image_data = requests.get(result["image"]["url"]).content
 
-        temp_file_path = "temp_annotated.jpg"
-        with open(temp_file_path, "wb") as f:
+        # Save image temporarily
+        temp_path = "temp_annotated.jpg"
+        with open(temp_path, "wb") as f:
             f.write(image_data)
 
-        upload_response = project.upload(temp_file_path, split="train")
+        # Upload using SDK's extended options
+        upload_response = project.upload(
+            image_path=temp_path,
+            batch_name="from-streamlit",
+            split="train",
+            num_retry_uploads=3,
+            tag_names=["auto-uploaded"],
+            sequence_number=1,
+            sequence_size=100
+        )
 
-        st.write(upload_response.json())  # 👈 Shows the upload result
+        st.write(upload_response.json())  # Debug the response
 
         if upload_response.status_code == 200 or "id" in upload_response.json():
-            st.success("✅ Image uploaded to Roboflow for annotation.")
+            st.success("✅ Image uploaded to Roboflow.")
         else:
-            st.error("❌ Failed to upload image to Roboflow.")
+            st.error("❌ Upload failed.")
     else:
-        st.warning("⚠️ No annotated image found to upload.")
+        st.warning("⚠️ No image found in the result to upload.")
+
 
 
