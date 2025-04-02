@@ -48,25 +48,22 @@ if uploaded_file is not None:
         st.warning("No predictions returned.")
 
 # Optionally save the annotated image
+
+
 if st.button("💾 Save annotated image"):
-
-    # ✅ Initialize Roboflow with your private key
     rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
-
-    # ✅ Connect to your workspace and project
     project = rf.workspace("quanticwork").project("my-first-project-eintr")
 
-    # ✅ Get the annotated image content from Roboflow
     if "image" in result and "url" in result["image"]:
         image_data = requests.get(result["image"]["url"]).content
 
-        # Save temporarily
         temp_file_path = "temp_annotated.jpg"
         with open(temp_file_path, "wb") as f:
             f.write(image_data)
 
-        # ✅ Upload to Roboflow
         upload_response = project.upload(temp_file_path, split="train")
+
+        st.write(upload_response.json())  # 👈 Shows the upload result
 
         if upload_response.status_code == 200 or "id" in upload_response.json():
             st.success("✅ Image uploaded to Roboflow for annotation.")
@@ -74,4 +71,5 @@ if st.button("💾 Save annotated image"):
             st.error("❌ Failed to upload image to Roboflow.")
     else:
         st.warning("⚠️ No annotated image found to upload.")
+
 
