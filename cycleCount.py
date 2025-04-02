@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import os
-import Roboflow
 
 
 # Make sure save folder exists
@@ -48,6 +47,9 @@ if uploaded_file is not None:
         st.warning("No predictions returned.")
 
 # Optionally save the annotated image
+
+from roboflow import Roboflow
+
 if st.button("💾 Upload to Roboflow"):
     rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
     project = rf.workspace("quanticwork").project("my-first-project-eintr")
