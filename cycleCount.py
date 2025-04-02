@@ -22,7 +22,7 @@ if uploaded_file:
     # ✅ Correct Roboflow API URL format
     api_url = "https://detect.roboflow.com/my-first-project-8/1?api_key=o9tbMpy3YklEF3MoRmdR"
 
-uploaded_file = st.camera_input("Take a photo")
+
 
 if uploaded_file is not None:
     img_bytes = uploaded_file.getvalue()
