@@ -18,15 +18,11 @@ if uploaded_file:
     img_bytes = uploaded_file.getvalue()
     img_str = base64.b64encode(img_bytes).decode("utf-8")
 
-    # ✅ INSERT your actual Roboflow API URL here (replace placeholders)
-    api_url = "https://detect.roboflow.com/My First Project 8/1?api_key=o9tbMpy3YklEF3MoRmdR"
-
+    # ✅ Correct Roboflow API URL format
+    api_url = "https://detect.roboflow.com/my-first-project-8/1?api_key=o9tbMpy3YklEF3MoRmdR"
 
     # Send image to Roboflow model
-    response = requests.post(
-    "https://detect.roboflow.com/YOUR_MODEL/1?api_key=YOUR_API_KEY",
-    files={"file": image},
-)
+    response = requests.post(api_url, json={"image": img_str})
     result = response.json()
 
     # Show the image
