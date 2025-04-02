@@ -17,7 +17,7 @@ if uploaded_file is not None:
     img_bytes = uploaded_file.getvalue()
 
     # ✅ Correct Roboflow API URL
-    api_url = "https://detect.roboflow.com/my-first-project-eintr/8/1?api_key=o9tbMpy3YklEF3MoRmdR"
+    api_url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
 
     # Send the image using files=, not JSON
     response = requests.post(api_url, files={"file": img_bytes})
