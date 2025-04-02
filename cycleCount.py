@@ -20,7 +20,7 @@ if uploaded_file is not None:
     api_url = "https://detect.roboflow.com/my-first-project-eintr/8"
     params = {
         "api_key": "o9tbMpy3YklEF3MoRmdR",
-        "format": "json",
+        "format": "json",        # <- Make sure this is JSON
         "annotated": "true"
     }
 
@@ -31,30 +31,26 @@ if uploaded_file is not None:
         try:
             result = response.json()
 
-            # Show original image
+            # Show original photo
             st.image(uploaded_file, caption="Original Image")
 
-            # Show annotated image (with bounding boxes)
+            # Show annotated image (bounding boxes from model)
             image_url = result.get("image", {}).get("url")
             if image_url:
                 st.image(image_url, caption="Roboflow Detection (Annotated)")
             else:
-                st.warning("⚠️ Annotated image not returned.")
+                st.warning("⚠️ Annotated image not returned. Check model output settings.")
 
-            # Count detected resistors
+            # Show number of detected resistors
             predictions = result.get("predictions", [])
-            if predictions:
-                st.success(f"✅ Detected {len(predictions)} resistors.")
-            else:
-                st.warning("No predictions found.")
+            st.success(f"✅ Detected {len(predictions)} resistors.")
 
         except Exception as e:
-            st.error(f"❌ Failed to parse result: {str(e)}")
-
+            st.error(f"❌ Failed to parse JSON result: {str(e)}")
     else:
-        st.error(f"❌ Roboflow API error: {response.status_code}")
+        st.error(f"❌ Roboflow API request failed (Status {response.status_code})")
 
-# Upload to Roboflow for manual annotation
+# Upload to Roboflow for annotation
 if st.button("💾 Upload to Roboflow"):
     if uploaded_file:
         temp_path = "temp_upload.jpg"
@@ -64,16 +60,14 @@ if st.button("💾 Upload to Roboflow"):
         try:
             rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
             project = rf.workspace("quanticwork").project("my-first-project-eintr")
-            upload_response = project.upload(
+            project.upload(
                 image_path=temp_path,
                 batch_name="streamlit-submits",
                 split="train",
                 tag_names=["from-streamlit"],
                 num_retry_uploads=3
             )
-
             st.success("📤 Uploaded to Roboflow. Check Annotate > Unannotated.")
-
         except Exception as e:
             st.error(f"❌ Upload failed: {str(e)}")
     else:
