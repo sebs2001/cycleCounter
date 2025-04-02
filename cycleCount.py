@@ -28,7 +28,7 @@ if uploaded_file is not None:
     img_bytes = uploaded_file.getvalue()
     img_str = base64.b64encode(img_bytes).decode("utf-8")
 
-    api_url = "https://detect.roboflow.com/my-first-project-8/1?api_key=o9tbMpy3YklEF3MoRmdR"
+    api_url = "https://detect.roboflow.com/my-first-project-eintr/8/1?api_key=o9tbMpy3YklEF3MoRmdR"
     response = requests.post(api_url, json={"image": img_str})
     result = response.json()
 
