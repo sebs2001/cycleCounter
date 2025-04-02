@@ -33,8 +33,8 @@ if uploaded_file is not None:
     result = response.json()
 
     if response.status_code != 200:
-    st.error(f"API Error: {response.status_code}")
-    st.stop()
+        st.error(f"API Error: {response.status_code}")
+        st.stop()
 
     result = response.json()
     st.json(result)
