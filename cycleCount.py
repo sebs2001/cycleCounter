@@ -2,6 +2,10 @@ import streamlit as st
 import requests
 import os
 
+# Make sure the Roboflow Python client is installed and upgraded:
+#   pip install --upgrade roboflow
+from roboflow import Roboflow
+
 # Ensure a folder exists for saving images if needed
 if not os.path.exists("saved"):
     os.makedirs("saved")
@@ -16,30 +20,27 @@ if uploaded_file is not None:
     # Get image bytes from the uploaded file
     img_bytes = uploaded_file.getvalue()
 
-    # Define your Roboflow inference endpoint (update project/version/API key as needed)
+    # -- Roboflow Inference Endpoint (update with your correct version/API key) --
     api_url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
 
-    # --------------------------
-    # Inference: Get the annotated image directly
-    # --------------------------
+    # 1) Request the annotated image (binary)
     response_image = requests.post(
         api_url,
         files={"file": img_bytes},
         params={"format": "image", "annotated": "true"}
     )
 
+    # Show the annotated image with bounding boxes
     if response_image.status_code == 200:
         st.image(response_image.content, caption="Annotated Image with bounding boxes")
     else:
         st.error(f"Error fetching annotated image: {response_image.status_code}")
 
-    # --------------------------
-    # Inference: Get the prediction count via JSON (do not display raw JSON)
-    # --------------------------
+    # 2) Request JSON predictions (for counting)
     response_json = requests.post(
         api_url,
         files={"file": img_bytes},
-        params={"format": "json", "annotated": "true"}
+        params={"format": "json"}  # annotated=true not strictly needed here
     )
 
     if response_json.status_code == 200:
@@ -52,38 +53,45 @@ if uploaded_file is not None:
     else:
         st.error(f"Error fetching predictions: {response_json.status_code}")
 
+
 # --------------------------
-# Upload Section: Direct upload to Roboflow using the REST API
+# UPLOAD SECTION: Use Roboflow Python client so images appear in "Unannotated"
 # --------------------------
 if st.button("💾 Upload to Roboflow"):
-    if not uploaded_file:
-        st.warning("No image to upload.")
-    else:
+    if uploaded_file:
         # Save the uploaded image temporarily
         temp_path = "temp_upload.jpg"
         with open(temp_path, "wb") as f:
             f.write(uploaded_file.getvalue())
 
-        # Set your dataset info and API key (update if necessary)
-        dataset_name = "quanticwork/my-first-project-eintr"  # Format: workspace/project-slug
-        api_key = "o9tbMpy3YklEF3MoRmdR"
-        upload_url = f"https://api.roboflow.com/dataset/{dataset_name}/upload"
-        params = {
-            "api_key": api_key,
-            "name": "temp_upload.jpg",
-            "split": "train",
-            "batch": "streamlit-submits",
-            "tag": "from-streamlit"
-        }
-
         try:
-            with open(temp_path, "rb") as f:
-                files = {"file": f}
-                upload_response = requests.post(upload_url, files=files, params=params)
-            if upload_response.status_code == 200:
-                st.success("✅ Uploaded to Roboflow. Check 'Annotate > Unannotated' in your project.")
-            else:
-                st.error(f"Upload failed: {upload_response.status_code}\n{upload_response.text}")
+            # 1) Initialize Roboflow
+            rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
+
+            # 2) Reference your workspace & project (exact names from Roboflow)
+            project = rf.workspace("quanticwork").project("my-first-project-eintr")
+
+            # 3) Minimal upload call
+            #    (If you need advanced params, see below)
+            upload_response = project.upload(temp_path)
+
+            # If you need advanced params and your plan supports them, try:
+            # upload_response = project.upload(
+            #     image_path=temp_path,
+            #     split="train",
+            #     batch_name="streamlit-submits",
+            #     tag_names=["from-streamlit"],
+            #     num_retry_uploads=3
+            # )
+
+            st.success("✅ Uploaded to Roboflow. Check 'Annotate > Unannotated' in your project.")
+
+            # Optionally, display the library's return value:
+            # st.write(upload_response)
+
         except Exception as e:
-            st.error(f"Upload failed: {str(e)}")
+            st.error(f"❌ Upload failed: {str(e)}")
+    else:
+        st.warning("⚠️ No image available to upload.")
+
 
