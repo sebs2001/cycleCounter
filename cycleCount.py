@@ -22,42 +22,52 @@ if uploaded_file:
     # Roboflow inference endpoint
     api_url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
 
-
     # Send request to Roboflow
     response = requests.post(api_url, json={"image": img_str})
-    result = response.json()
-    st.json(result)  # This will show the full raw API response
 
+    try:
+        result = response.json()
+        st.json(result)  # Show full raw API response
+    except Exception as e:
+        st.error(f"❌ Failed to decode JSON from Roboflow: {str(e)}")
+        st.stop()
 
-    # Show the original uploaded image
+    # Show original image
     st.image(uploaded_file, caption="Original Image")
 
-    # Count and display number of detections
-    if "predictions" in result:
+    # Show annotated image from Roboflow (if available)
+    if "image" in result and "url" in result["image"]:
+        st.image(result["image"]["url"], caption="Roboflow Detection")
+
+    # Show number of predictions
+    if "predictions" in result and len(result["predictions"]) > 0:
         count = len(result["predictions"])
-        st.success(f"Detected {count} resistors.")
+        st.success(f"✅ Detected {count} resistors.")
     else:
-        st.warning("No predictions returned.")
+        st.warning("⚠️ No predictions returned.")
 
     # Upload to Roboflow for annotation
     if st.button("💾 Upload to Roboflow"):
         rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
         project = rf.workspace("quanticwork").project("my-first-project-eintr")
 
-        # Save the image temporarily
-        with open("temp.jpg", "wb") as f:
+        # Save image temporarily
+        temp_path = "temp.jpg"
+        with open(temp_path, "wb") as f:
             f.write(img_bytes)
 
-        # Upload to Roboflow project
-        project.upload(
-            image_path="temp.jpg",
-            batch_name="streamlit-submits",
-            split="train",
-            num_retry_uploads=3,
-            tag_names=["from-streamlit"]
-        )
+        try:
+            upload_response = project.upload(
+                image_path=temp_path,
+                batch_name="streamlit-submits",
+                split="train",
+                num_retry_uploads=3,
+                tag_names=["from-streamlit"]
+            )
+            st.success("✅ Uploaded to Roboflow. Check Annotate > Unannotated.")
+        except Exception as e:
+            st.error(f"❌ Upload failed: {str(e)}")
 
-        st.success("✅ Uploaded to Roboflow. Check Annotate > Unannotated.")
 
 
 
