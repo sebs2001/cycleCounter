@@ -26,6 +26,8 @@ if uploaded_file:
     # Send request to Roboflow
     response = requests.post(api_url, json={"image": img_str})
     result = response.json()
+    st.json(result)  # This will show the full raw API response
+
 
     # Show the original uploaded image
     st.image(uploaded_file, caption="Original Image")
