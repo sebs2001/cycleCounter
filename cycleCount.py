@@ -22,6 +22,7 @@ if uploaded_file:
     # Roboflow inference endpoint
     api_url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
 
+
     # Send request to Roboflow
     response = requests.post(api_url, json={"image": img_str})
     result = response.json()
