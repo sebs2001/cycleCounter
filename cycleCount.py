@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import base64
 import os
+from roboflow import Roboflow
+ 
 
 # Make sure save folder exists
 if not os.path.exists("saved"):
@@ -64,6 +66,7 @@ if uploaded_file is not None:
             st.error(f"❌ Upload failed: {str(e)}")
     else:
         st.warning("⚠️ No image available to upload.")
+
 
 
 
