@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-
+from roboflow import Roboflow
 
 # Make sure save folder exists
 if not os.path.exists("saved"):
@@ -14,49 +14,57 @@ st.write("Take a photo.")
 uploaded_file = st.camera_input("Take a photo", key="camera1")
 
 if uploaded_file is not None:
-    # Get image bytes
+    # Convert uploaded image to bytes
     img_bytes = uploaded_file.getvalue()
 
-    # ✅ Correct Roboflow API URL
+    # Your Roboflow inference endpoint (make sure version & key match your project)
     api_url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
 
-    # Send the image using files=, not JSON
-    response = requests.post(
-    api_url,
-    files={"file": img_bytes},
-    params={"format": "image", "annotated": "true"}
-)
+    #### 1) First request for JSON predictions ####
+    response_json = requests.post(
+        api_url,
+        files={"file": img_bytes},
+        params={"format": "json"}  # request JSON so we can parse predictions
+    )
 
-
-    if response.status_code != 200:
-        st.error(f"API Error: {response.status_code}")
+    if response_json.status_code != 200:
+        st.error(f"API Error (JSON): {response_json.status_code}")
         st.stop()
 
-    result = response.json()
-
+    result = response_json.json()
     # Debug: show the raw JSON response
+    st.subheader("Raw JSON Predictions")
     st.json(result)
 
     # Show the original photo
+    st.subheader("Original Image")
     st.image(uploaded_file, caption="Original Image")
 
-    # Show Roboflow annotated result
-    if "image" in result and "url" in result["image"]:
-        st.image(result["image"]["url"], caption="Roboflow Detection")
+    #### 2) Second request for the annotated/bounding-box image ####
+    response_image = requests.post(
+        api_url,
+        files={"file": img_bytes},
+        params={"format": "image", "annotated": "true"}  # request an annotated image
+    )
 
-    # Show count
+    if response_image.status_code != 200:
+        st.error(f"API Error (Annotated Image): {response_image.status_code}")
+        st.stop()
+
+    # Show the annotated image from Roboflow
+    st.subheader("Roboflow Detection (with bounding boxes)")
+    st.image(response_image.content, caption="Annotated Image from Roboflow")
+
+    # Count the predictions (e.g. resistors)
     if "predictions" in result:
         count = len(result["predictions"])
         st.success(f"Detected {count} resistors.")
     else:
         st.warning("No predictions returned.")
 
-# Optionally save the annotated image
-
-
-
+# Upload to Roboflow button
 if st.button("💾 Upload to Roboflow"):
-    from roboflow import Roboflow
+    # Initialize Roboflow
     rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
     project = rf.workspace("quanticwork").project("my-first-project-eintr")
 
@@ -75,10 +83,8 @@ if st.button("💾 Upload to Roboflow"):
                 tag_names=["from-streamlit"],
                 num_retry_uploads=3
             )
-
+            # If we reach here, upload worked
             st.success("✅ Uploaded to Roboflow. Check Annotate > Unannotated.")
-            
-
         except Exception as e:
             st.error(f"❌ Upload failed: {str(e)}")
     else:
