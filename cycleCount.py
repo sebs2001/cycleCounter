@@ -3,63 +3,90 @@ import requests
 import streamlit as st
 from roboflow import Roboflow
 
-# Create "saved" folder if it doesn't exist
+# 1) CREATE A FOLDER (IF NEEDED)
 os.makedirs("saved", exist_ok=True)
 
 st.title("Cycle Counter v1.0")
 st.write("Take a photo.")
 
-# Camera input widget (works on both mobile and desktop)
+# 2) CAMERA INPUT
 uploaded_file = st.camera_input("Take a photo", key="camera1")
 
-if uploaded_file is not None:
+if uploaded_file:
     img_bytes = uploaded_file.getvalue()
-    api_url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
+    # Save the original image locally so we can upload it later
+    original_path = "temp_upload.jpg"
+    with open(original_path, "wb") as f:
+        f.write(img_bytes)
 
-    # Request the annotated image (binary response)
+    # 3) INFERENCE ENDPOINT (UPDATE YOUR VERSION & API KEY AS NEEDED)
+    api_url = "https://detect.roboflow.com/my-first-project-eintr/8"
+    api_key = "o9tbMpy3YklEF3MoRmdR"
+
+    # 3A) GET & DISPLAY ANNOTATED IMAGE FOR VISUAL REFERENCE
     response_image = requests.post(
-        api_url,
+        f"{api_url}?api_key={api_key}",
         files={"file": img_bytes},
         params={"format": "image", "annotated": "true"}
     )
     if response_image.status_code == 200:
-        annotated_img = response_image.content
-        st.image(annotated_img, caption="Annotated Image with bounding boxes")
-        # Store the annotated image bytes for upload
-        st.session_state["annotated_img"] = annotated_img
+        st.image(response_image.content, caption="Annotated Image with bounding boxes")
     else:
         st.error(f"Error fetching annotated image: {response_image.status_code}")
 
-    # Request JSON predictions for counting
+    # 3B) GET JSON PREDICTIONS (ACTUAL COORDINATES)
     response_json = requests.post(
-        api_url,
+        f"{api_url}?api_key={api_key}",
         files={"file": img_bytes},
         params={"format": "json"}
     )
     if response_json.status_code == 200:
-        predictions = response_json.json().get("predictions", [])
+        data = response_json.json()
+        predictions = data.get("predictions", [])
         if predictions:
             st.success(f"Detected {len(predictions)} resistors.")
+            # Store predictions in session state so we can upload them as annotations
+            st.session_state["predictions"] = predictions
         else:
             st.warning("No predictions returned.")
     else:
         st.error(f"Error fetching predictions: {response_json.status_code}")
 
-# UPLOAD SECTION: Upload the annotated image using Roboflow Python client
+# 4) UPLOAD THE IMAGE + ANNOTATIONS TO ROBOFLOW
+#    This time we pass bounding-box data so Roboflow sees it as 'annotated.'
 if st.button("💾 Upload to Roboflow"):
-    if "annotated_img" not in st.session_state:
-        st.warning("⚠️ No annotated image available to upload.")
+    if not uploaded_file:
+        st.warning("⚠️ No image available to upload.")
     else:
-        temp_path = "temp_upload.jpg"
-        with open(temp_path, "wb") as f:
-            f.write(st.session_state["annotated_img"])
-        try:
-            rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
-            project = rf.workspace("quanticwork").project("my-first-project-eintr")
-            upload_response = project.upload(temp_path)
-            st.success("✅ Uploaded annotated image to Roboflow. Check 'Annotate > Unannotated' in your project.")
-        except Exception as e:
-            st.error(f"❌ Upload failed: {e}")
+        if "predictions" not in st.session_state:
+            st.warning("⚠️ No bounding-box data to upload. (Run inference first.)")
+        else:
+            # Convert predictions to Roboflow's annotation format
+            annotations = []
+            for p in st.session_state["predictions"]:
+                annotations.append({
+                    "x": p["x"],
+                    "y": p["y"],
+                    "width": p["width"],
+                    "height": p["height"],
+                    "class": p["class"]
+                })
+
+            try:
+                # Initialize Roboflow
+                rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
+                project = rf.workspace("quanticwork").project("my-first-project-eintr")
+
+                # Upload original image WITH annotation data
+                upload_response = project.upload(
+                    image_path="temp_upload.jpg",
+                    annotation={"annotations": annotations}
+                )
+
+                st.success("✅ Auto-labeled image uploaded to Roboflow! Check 'Annotate' or 'Dataset' in your project.")
+            except Exception as e:
+                st.error(f"❌ Upload failed: {e}")
+
 
 
 
