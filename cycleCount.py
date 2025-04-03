@@ -21,7 +21,12 @@ if uploaded_file is not None:
     api_url = "https://detect.roboflow.com/my-first-project-eintr/8?api_key=o9tbMpy3YklEF3MoRmdR"
 
     # Send the image using files=, not JSON
-    response = requests.post(api_url, files={"file": img_bytes})
+    response = requests.post(
+    api_url,
+    files={"file": img_bytes},
+    params={"format": "image", "annotated": "true"}
+)
+
 
     if response.status_code != 200:
         st.error(f"API Error: {response.status_code}")
@@ -72,7 +77,7 @@ if st.button("💾 Upload to Roboflow"):
             )
 
             st.success("✅ Uploaded to Roboflow. Check Annotate > Unannotated.")
-            st.write(upload_response.json())  # Show details
+            
 
         except Exception as e:
             st.error(f"❌ Upload failed: {str(e)}")
