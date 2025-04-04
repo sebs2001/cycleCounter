@@ -2,6 +2,7 @@ import os
 import requests
 import streamlit as st
 from roboflow import Roboflow
+from collections import Counter
 
 # 1) CREATE A FOLDER (IF NEEDED)
 os.makedirs("saved", exist_ok=True)
@@ -44,7 +45,11 @@ if uploaded_file:
         data = response_json.json()
         predictions = data.get("predictions", [])
         if predictions:
-            st.success(f"Detected {len(predictions)} resistors.")
+            # Convert each prediction's class to uppercase for uniform counting.
+            counts = Counter(p.get("class", "").upper() for p in predictions)
+            resistor_count = counts.get("RESISTOR", 0)
+            check_count = counts.get("CHECK", 0)
+            st.success(f"Detected {resistor_count} resistors and {check_count} CHECK.")
             # Store predictions in session state so we can upload them as annotations
             st.session_state["predictions"] = predictions
         else:
@@ -86,6 +91,7 @@ if st.button("💾 Upload to Roboflow"):
                 st.success("✅ Auto-labeled image uploaded to Roboflow! Check 'Annotate' or 'Dataset' in your project.")
             except Exception as e:
                 st.error(f"❌ Upload failed: {e}")
+
 
 
 
