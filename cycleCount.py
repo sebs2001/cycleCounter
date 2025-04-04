@@ -20,7 +20,7 @@ if uploaded_file:
         f.write(img_bytes)
 
     # 3) INFERENCE ENDPOINT (UPDATE YOUR VERSION & API KEY AS NEEDED)
-    api_url = "https://detect.roboflow.com/my-first-project-eintr/8"
+    api_url = "https://detect.roboflow.com/my-first-project-eintr/9"
     api_key = "o9tbMpy3YklEF3MoRmdR"
 
     # 3A) GET & DISPLAY ANNOTATED IMAGE FOR VISUAL REFERENCE
