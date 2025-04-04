@@ -45,11 +45,14 @@ if uploaded_file:
         data = response_json.json()
         predictions = data.get("predictions", [])
         if predictions:
-            # Convert each prediction's class to uppercase for uniform counting.
+            # Convert prediction classes to uppercase to standardize, then count each class
             counts = Counter(p.get("class", "").upper() for p in predictions)
             resistor_count = counts.get("RESISTOR", 0)
             check_count = counts.get("CHECK", 0)
-            st.success(f"Detected {resistor_count} resistors and {check_count} CHECK.")
+            # Display a message showing both classes
+            st.success(f"Detected:\n- {resistor_count} resistor(s)\n- {check_count} CHECK object(s)")
+            # Optional: Debug output of the complete counts (remove if not needed)
+            st.write("Detailed counts:", dict(counts))
             # Store predictions in session state so we can upload them as annotations
             st.session_state["predictions"] = predictions
         else:
@@ -91,6 +94,7 @@ if st.button("💾 Upload to Roboflow"):
                 st.success("✅ Auto-labeled image uploaded to Roboflow! Check 'Annotate' or 'Dataset' in your project.")
             except Exception as e:
                 st.error(f"❌ Upload failed: {e}")
+
 
 
 
