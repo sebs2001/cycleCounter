@@ -21,7 +21,7 @@ if uploaded_file:
         f.write(img_bytes)
 
     # 3) INFERENCE ENDPOINT (UPDATE YOUR VERSION & API KEY AS NEEDED)
-    api_url = "https://detect.roboflow.com/my-first-project-eintr/9"
+    api_url = "https://detect.roboflow.com/drybox/6"
     api_key = "o9tbMpy3YklEF3MoRmdR"
 
     # 3A) GET & DISPLAY ANNOTATED IMAGE FOR VISUAL REFERENCE
@@ -47,10 +47,9 @@ if uploaded_file:
         if predictions:
             # Convert prediction classes to uppercase to standardize, then count each class
             counts = Counter(p.get("class", "").upper() for p in predictions)
-            resistor_count = counts.get("RESISTOR", 0)
-            check_count = counts.get("CHECK", 0)
-            # Display a message showing both classes
-            st.success(f"Detected:\n- {resistor_count} resistor(s)\n- {check_count} CHECK object(s)")
+            component_count = counts.get("COMPONENT", 0)
+            st.success(f"Detected:\n- {component_count} component(s)")
+
             # Optional: Debug output of the complete counts (remove if not needed)
             st.write("Detailed counts:", dict(counts))
             # Store predictions in session state so we can upload them as annotations
@@ -83,7 +82,7 @@ if st.button("💾 Upload to Roboflow"):
             try:
                 # Initialize Roboflow
                 rf = Roboflow(api_key="o9tbMpy3YklEF3MoRmdR")
-                project = rf.workspace("quanticwork").project("my-first-project-eintr")
+                project = rf.workspace("quanticwork").project("drybox")
 
                 # Upload original image WITH annotation data
                 upload_response = project.upload(
